@@ -1,0 +1,230 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Net;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+using System.Timers;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using System.Windows.Threading;
+
+namespace QuestSideloader
+{
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : Window
+    {
+        private static string adbUrl = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip";
+
+        //Gets the wpf equivalent to winforms LocalUserAppDataPath
+        private static string userprofilePath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\" + 
+                                                $@"{Assembly.GetExecutingAssembly().GetName().Name}\" + 
+                                                $@"{Assembly.GetExecutingAssembly().GetName().Name}\" + 
+                                                $@"{Assembly.GetExecutingAssembly().GetName().Version.ToString()}";
+
+        private DispatcherTimer devicesTimer = new DispatcherTimer();
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            this.AllowDrop = true;
+            this.DragEnter += new DragEventHandler(dragEnter);
+            this.Drop += new DragEventHandler(dragDrop);
+            this.devicesTimer.Interval = TimeSpan.FromSeconds(1);
+            this.devicesTimer.Tick += DevicesTimer_Tick;
+
+            Directory.CreateDirectory(userprofilePath);
+
+            init();
+        }
+
+        private void DevicesTimer_Tick(object sender, EventArgs e)
+        {
+            devicesTimer.IsEnabled = false;
+            getDevices();
+        }
+
+        private void init()
+        {
+            getAdb();
+        }
+
+        private void dragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effects = DragDropEffects.Copy;
+        }
+
+        private void dragDrop(object sender, DragEventArgs e)
+        {
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            foreach (string file in files)
+            {
+                if (file.EndsWith(".apk"))
+                {
+                    installApk(file);
+                    break;
+                }
+            }
+        }
+
+        private void installApk(string path)
+        {
+            if (MessageBox.Show("Do you wish to install this app?\nWarning: You should only install apps from developers you trust!", "Install APK", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+            {
+                statusLabel.Content = "Installing " + path + "...";
+                var o = adbCmd("install -r " + path);
+                checkInstallOutput(o);
+            }
+        }
+
+        private void getAdb()
+        {
+
+            if (!System.IO.File.Exists(userprofilePath+ "/platform-tools/adb.exe"))
+            {
+                statusLabel.Content = "ADB not found.";
+                if (MessageBox.Show("To sideload apps, a program called ADB must be downloaded from Google. Click OK to continue...", "Download ADB?", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                {
+                    statusLabel.Content = "Please wait...\nThe program may look like it has frozen but be patient!";
+                    dropLabel.Content = "Downloading: " + adbUrl;
+                    WebClient Client = new WebClient();
+                    try
+                    {
+                        Client.DownloadFile(adbUrl, userprofilePath + "/adb.zip");
+                    }
+                    catch (WebException we)
+                    {
+                        MessageBox.Show("An error occurred downloading ADB. Please try again or contact the developer: " + we.ToString());
+                        Close();
+                    }
+
+                    try
+                    {
+                        ZipFile.ExtractToDirectory(userprofilePath + "/adb.zip", userprofilePath + "/");
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show("An error occurred extracting ADB. Please try again or contact the developer: " + e.ToString());
+                        Close();
+                    }
+
+                    if (!System.IO.File.Exists(userprofilePath + "/platform-tools/adb.exe"))
+                    {
+                        MessageBox.Show("An error occurred extracting ADB. Please try again or contact the developer.");
+                        Close();
+                    }
+                    else
+                        getDevices();
+                }
+                else
+                    Close();
+            }
+            else
+            {
+                getDevices();
+            }
+        }
+
+        private void getDevices()
+        {
+            dropLabel.Content = "...";
+            statusLabel.Content = "Getting devices, please plug in your Quest/Go...";
+
+            //adb devices
+            var o = adbCmd("devices");
+            if (o.ToLower().Contains("unauthorized") && !o.ToLower().Contains("device"))
+            {
+                dropLabel.Content = "Device found. Please leave your Quest/Go plugged in, put it on and authorize this computer when prompted...";
+                devicesTimer.IsEnabled = true;
+            }
+            else if (o.Replace("List of devices", "").Contains("device"))
+            {
+                dropLabel.Content = "Device found.";
+                checkAutoInstall();
+            }
+            else
+            {
+                dropLabel.Content = "Getting devices, please plug in your Quest/Go...";
+                devicesTimer.IsEnabled = true;
+            }
+        }
+
+        private string adbCmd(string options)
+        {
+            Process p = new Process();
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.WorkingDirectory = "./";
+            p.StartInfo.FileName = userprofilePath + "/platform-tools/adb.exe";
+            p.StartInfo.Arguments = options;
+            p.StartInfo.CreateNoWindow = true;
+            p.Start();
+            string output = p.StandardOutput.ReadToEnd();
+            p.WaitForExit();
+            return output;
+        }
+
+        private void checkAutoInstall()
+        {
+            //check for auto-install package apk
+            if (System.IO.File.Exists("./autoinstall.apk"))
+            {
+                statusLabel.Content = "Device found.";
+                dropLabel.Content = "";
+                if (MessageBox.Show("Auto-install APK detected. Do you wish to install this app?\nWarning: You should only install apps from developers you trust!", "Confirm Install", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+                {
+                    statusLabel.Content = "Auto installing, please wait.";
+                    var o = adbCmd("install -r ./autoinstall.apk");
+                    checkInstallOutput(o);
+                    setupDragAndDrop();
+                    statusLabel.Content = "App installed successfully!";
+                }
+                else
+                {
+                    setupDragAndDrop();
+                }
+            }
+            else
+            {
+                setupDragAndDrop();
+            }
+        }
+
+        private void checkInstallOutput(string output)
+        {
+            if (output.Contains("Success"))
+            {
+                statusLabel.Content = "App installed successfully!";
+            }
+            else
+            {
+                statusLabel.Content = "App NOT installed!\nInfo: " + output;
+            }
+        }
+
+        private void setupDragAndDrop()
+        {
+            statusLabel.Content = "Device found.";
+            dropLabel.Content = "Drag your app's APK file\nhere to install.";
+        }
+
+        private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
+            e.Handled = true;
+        }
+    }
+}

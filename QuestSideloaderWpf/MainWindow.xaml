@@ -1,0 +1,28 @@
+﻿<Window x:Class="QuestSideloader.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:QuestSideloader"
+        mc:Ignorable="d"
+        Title="QuestSideloader" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="80"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="50"/>
+        </Grid.RowDefinitions>
+
+        <Label x:Name="statusLabel" Grid.Row="0"/>
+        <Label x:Name="dropLabel" Grid.Row="1"/>
+        <TextBlock x:Name="linkTextBlock" Grid.Row="2" HorizontalAlignment="Center">
+            <Hyperlink NavigateUri="https://developer.oculus.com/documentation/mobilesdk/latest/concepts/mobile-device-setup-go/" RequestNavigate="Hyperlink_RequestNavigate" TextDecorations=""> 
+                <TextBlock HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap">
+                    You must enable developer mode on your Oculus account before using this tool.
+                    <LineBreak/>
+                    Click here and follow the instructions, then plug in your device.
+                </TextBlock>
+            </Hyperlink>
+        </TextBlock>
+    </Grid>
+</Window>
