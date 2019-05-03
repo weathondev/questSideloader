@@ -8,14 +8,12 @@
         Title="QuestSideloader" Height="450" Width="800">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="80"/>
-            <RowDefinition Height="*"/>
             <RowDefinition Height="50"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Label x:Name="statusLabel" Grid.Row="0"/>
-        <Label x:Name="dropLabel" Grid.Row="1"/>
-        <TextBlock x:Name="linkTextBlock" Grid.Row="2" HorizontalAlignment="Center">
+        <TextBlock x:Name="linkTextBlock" Grid.Row="0" HorizontalAlignment="Center">
             <Hyperlink NavigateUri="https://developer.oculus.com/documentation/mobilesdk/latest/concepts/mobile-device-setup-go/" RequestNavigate="Hyperlink_RequestNavigate" TextDecorations=""> 
                 <TextBlock HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap">
                     You must enable developer mode on your Oculus account before using this tool.
@@ -24,5 +22,12 @@
                 </TextBlock>
             </Hyperlink>
         </TextBlock>
+
+        <Label x:Name="dropLabel" Grid.Row="1" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="2">
+            <ProgressBar x:Name="statusBar" IsIndeterminate="True" Width="50"/>
+            <Label x:Name="statusLabel" />
+        </StackPanel>
     </Grid>
 </Window>

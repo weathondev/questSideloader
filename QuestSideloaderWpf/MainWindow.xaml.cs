@@ -142,22 +142,26 @@ namespace QuestSideloader
         {
             dropLabel.Content = "...";
             statusLabel.Content = "Getting devices, please plug in your Quest/Go...";
+            statusBar.Visibility = Visibility.Visible;
 
             //adb devices
             var o = adbCmd("devices");
             if (o.ToLower().Contains("unauthorized") && !o.ToLower().Contains("device"))
             {
                 dropLabel.Content = "Device found. Please leave your Quest/Go plugged in, put it on and authorize this computer when prompted...";
+                statusBar.Visibility = Visibility.Collapsed;
                 devicesTimer.IsEnabled = true;
             }
             else if (o.Replace("List of devices", "").Contains("device"))
             {
                 dropLabel.Content = "Device found.";
+                statusBar.Visibility = Visibility.Collapsed;
                 checkAutoInstall();
             }
             else
             {
                 dropLabel.Content = "Getting devices, please plug in your Quest/Go...";
+                statusBar.Visibility = Visibility.Visible;
                 devicesTimer.IsEnabled = true;
             }
         }
