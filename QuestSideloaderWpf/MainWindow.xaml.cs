@@ -41,8 +41,6 @@ namespace QuestSideloader
         {
             InitializeComponent();
             this.AllowDrop = true;
-            this.DragEnter += new DragEventHandler(dragEnter);
-            this.Drop += new DragEventHandler(dragDrop);
             this.devicesTimer.Interval = TimeSpan.FromSeconds(1);
             this.devicesTimer.Tick += DevicesTimer_Tick;
 
@@ -64,7 +62,17 @@ namespace QuestSideloader
 
         private void dragEnter(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effects = DragDropEffects.Copy;
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effects = DragDropEffects.Copy;
+                dragGrid.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void dragLeave(object sender, DragEventArgs e)
+        {
+            e.Effects = DragDropEffects.None;
+            dragGrid.Visibility = Visibility.Collapsed;
         }
 
         private void dragDrop(object sender, DragEventArgs e)
@@ -78,6 +86,7 @@ namespace QuestSideloader
                     break;
                 }
             }
+            dragGrid.Visibility = Visibility.Collapsed;
         }
 
         private void installApk(string path)
@@ -146,7 +155,7 @@ namespace QuestSideloader
 
             //adb devices
             var o = adbCmd("devices");
-            if (o.ToLower().Contains("unauthorized") && !o.ToLower().Contains("device"))
+            if (o.ToLower().Contains("unauthorized"))
             {
                 dropLabel.Content = "Device found. Please leave your Quest/Go plugged in, put it on and authorize this computer when prompted...";
                 statusBar.Visibility = Visibility.Collapsed;

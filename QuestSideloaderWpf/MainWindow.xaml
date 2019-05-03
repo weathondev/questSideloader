@@ -4,17 +4,23 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:QuestSideloader"
+        AllowDrop="True"
+        DragEnter="dragEnter"
+        Drop="dragDrop"
+        DragLeave="dragLeave"
+        Background="#181818"
         mc:Ignorable="d"
+        Icon="E:\Bibliotheken\Dokumente\questSideloader\QuestSideloaderWpf\questsideloader_small.png"
         Title="QuestSideloader" Height="450" Width="800">
-    <Grid>
+    <Grid Margin="5">
         <Grid.RowDefinitions>
-            <RowDefinition Height="50"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <TextBlock x:Name="linkTextBlock" Grid.Row="0" HorizontalAlignment="Center">
-            <Hyperlink NavigateUri="https://developer.oculus.com/documentation/mobilesdk/latest/concepts/mobile-device-setup-go/" RequestNavigate="Hyperlink_RequestNavigate" TextDecorations=""> 
+            <Hyperlink NavigateUri="https://developer.oculus.com/documentation/mobilesdk/latest/concepts/mobile-device-setup-go/" RequestNavigate="Hyperlink_RequestNavigate" TextDecorations="" Foreground="#b5b5b5"> 
                 <TextBlock HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap">
                     You must enable developer mode on your Oculus account before using this tool.
                     <LineBreak/>
@@ -23,11 +29,13 @@
             </Hyperlink>
         </TextBlock>
 
-        <Label x:Name="dropLabel" Grid.Row="1" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <Label x:Name="dropLabel" Grid.Row="1" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#b5b5b5" />
 
         <StackPanel Orientation="Horizontal" Grid.Row="2">
             <ProgressBar x:Name="statusBar" IsIndeterminate="True" Width="50"/>
-            <Label x:Name="statusLabel" />
+            <Label x:Name="statusLabel" Foreground="#b5b5b5" />
         </StackPanel>
+
+        <Grid x:Name="dragGrid" Grid.RowSpan="3" Background="#3e3e3e" Opacity="0.6" Visibility="Collapsed"/>
     </Grid>
 </Window>
