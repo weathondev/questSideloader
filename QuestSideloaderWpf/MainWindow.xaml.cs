@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Management;
 using System.Net;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Navigation;
 using System.Windows.Threading;
@@ -124,20 +127,23 @@ namespace QuestSideloader
                         Close();
                     }
                     else
+                    {
+                        dropLabel.Content = "Getting devices, please plug in your Quest/Go...";
                         getDevices();
+                    }
                 }
                 else
                     Close();
             }
             else
             {
+                dropLabel.Content = "Getting devices, please plug in your Quest/Go...";
                 getDevices();
             }
         }
 
-        private void getDevices()
+        private async void getDevices()
         {
-            dropLabel.Content = "...";
             statusLabel.Content = "Getting devices, please plug in your Quest/Go...";
             statusBar.Visibility = Visibility.Visible;
 
@@ -157,25 +163,8 @@ namespace QuestSideloader
             }
             else
             {
-                var usbDevices = UsbBrowser.GetUsbDevices();
-                bool goOrQuestConnected = false;
-
-                foreach (var device in usbDevices)
-                {
-                    if (!goOrQuestConnected)
-                    {
-                        foreach (var property in device.Properties)
-                        {
-                            string val = property.Value != null ? property.Value.ToString() : string.Empty;
-                            if (val.Contains("VID_2833&PID_0083") || val.Contains("VID_2833&PID_0086") || val.Contains("VID&0002045E_PID&065B"))
-                            {
-                                goOrQuestConnected = true;
-                                break;
-                            }
-                        }
-                    }
-                    else break;
-                }
+                var usbDevices = await UsbBrowser.GetUsbDevices();
+                bool goOrQuestConnected = await IsGoOrQuestConnected(usbDevices);
 
                 if (goOrQuestConnected)
                     dropLabel.Content = "Oculus HMD connected, please enable developer mode by clicking the above link.";
@@ -185,14 +174,25 @@ namespace QuestSideloader
                 statusBar.Visibility = Visibility.Visible;
                 devicesTimer.IsEnabled = true;
             }
-
-
-
-
-
         }
 
-        private string adbCmd(string options)
+        private async Task<bool> IsGoOrQuestConnected(IList<ManagementBaseObject> list)
+        {
+            foreach (var device in list)
+            {
+                foreach (var property in device.Properties)
+                {
+                    string val = property.Value != null ? property.Value.ToString() : string.Empty;
+                    if (val.Contains("VID_2833&PID_0083") || val.Contains("VID_2833&PID_0086") || val.Contains("VID&0002045E_PID&065B"))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private static string adbCmd(string options)
         {
             Process p = new Process();
             p.StartInfo.UseShellExecute = false;

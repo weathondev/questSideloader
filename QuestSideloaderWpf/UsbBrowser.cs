@@ -10,9 +10,9 @@ namespace QuestSideloader
     public static class UsbBrowser
     {
 
-        public static void PrintUsbDevices()
+        public async static void PrintUsbDevices()
         {
-            IList<ManagementBaseObject> usbDevices = GetUsbDevices();
+            IList<ManagementBaseObject> usbDevices = await GetUsbDevices();
 
             foreach (ManagementBaseObject usbDevice in usbDevices)
             {
@@ -25,9 +25,9 @@ namespace QuestSideloader
             }
         }
 
-        public static IList<ManagementBaseObject> GetUsbDevices()
+        public async static Task<IList<ManagementBaseObject>> GetUsbDevices()
         {
-            IList<string> usbDeviceAddresses = LookUpUsbDeviceAddresses();
+            IList<string> usbDeviceAddresses = await LookUpUsbDeviceAddresses();
 
             List<ManagementBaseObject> usbDevices = new List<ManagementBaseObject>();
 
@@ -35,20 +35,23 @@ namespace QuestSideloader
             {
                 // query MI for the PNP device info
                 // address must be escaped to be used in the query; luckily, the form we extracted previously is already escaped
-                ManagementObjectCollection curMoc = QueryMi("Select * from Win32_PnPEntity where PNPDeviceID = " + usbDeviceAddress);
-                foreach (ManagementBaseObject device in curMoc)
+                ManagementObjectCollection curMoc = await QueryMi("Select * from Win32_PnPEntity where PNPDeviceID = " + usbDeviceAddress);
+                await Task.Run(() =>
                 {
-                    usbDevices.Add(device);
-                }
+                    foreach (ManagementBaseObject device in curMoc)
+                    {
+                        usbDevices.Add(device);
+                    }
+                });
             }
 
             return usbDevices;
         }
 
-        public static IList<string> LookUpUsbDeviceAddresses()
+        public async static Task<IList<string>> LookUpUsbDeviceAddresses()
         {
             // this query gets the addressing information for connected USB devices
-            ManagementObjectCollection usbDeviceAddressInfo = QueryMi(@"Select * from Win32_USBControllerDevice");
+            ManagementObjectCollection usbDeviceAddressInfo = await QueryMi(@"Select * from Win32_USBControllerDevice");
 
             List<string> usbDeviceAddresses = new List<string>();
 
@@ -65,10 +68,10 @@ namespace QuestSideloader
         }
 
         // run a query against Windows Management Infrastructure (MI) and return the resulting collection
-        public static ManagementObjectCollection QueryMi(string query)
+        public async static Task<ManagementObjectCollection> QueryMi(string query)
         {
             ManagementObjectSearcher managementObjectSearcher = new ManagementObjectSearcher(query);
-            ManagementObjectCollection result = managementObjectSearcher.Get();
+            ManagementObjectCollection result = await Task.Run(() =>  managementObjectSearcher.Get());
 
             managementObjectSearcher.Dispose();
             return result;
