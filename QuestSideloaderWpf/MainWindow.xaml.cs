@@ -1,23 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Timers;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace QuestSideloader
@@ -169,10 +157,39 @@ namespace QuestSideloader
             }
             else
             {
-                dropLabel.Content = "Getting devices, please plug in your Quest/Go...";
+                var usbDevices = UsbBrowser.GetUsbDevices();
+                bool goOrQuestConnected = false;
+
+                foreach (var device in usbDevices)
+                {
+                    if (!goOrQuestConnected)
+                    {
+                        foreach (var property in device.Properties)
+                        {
+                            string val = property.Value != null ? property.Value.ToString() : string.Empty;
+                            if (val.Contains("VID_2833&PID_0083") || val.Contains("VID_2833&PID_0086") || val.Contains("VID&0002045E_PID&065B"))
+                            {
+                                goOrQuestConnected = true;
+                                break;
+                            }
+                        }
+                    }
+                    else break;
+                }
+
+                if (goOrQuestConnected)
+                    dropLabel.Content = "Oculus HMD connected, please enable developer mode by clicking the above link.";
+                else
+                    dropLabel.Content = "Getting devices, please plug in your Quest/Go...";
+
                 statusBar.Visibility = Visibility.Visible;
                 devicesTimer.IsEnabled = true;
             }
+
+
+
+
+
         }
 
         private string adbCmd(string options)
