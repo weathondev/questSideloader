@@ -28,6 +28,15 @@ namespace QuestSideloader
 
         private DispatcherTimer devicesTimer = new DispatcherTimer();
 
+        private const string STATUS_SEARCHING = "Searching for Quest/Go ...";
+        private const string STATUS_SEARCHING_LONG = "Searching devices, please plug in your Quest/Go...";
+        private const string STATUS_DEVICE_FOUND_UNAUTHORIZED = "Device found. Waiting for authorization...";
+        private const string STATUS_DEVICE_FOUND_UNAUTHORIZED_LONG = "Device found. Leave your Quest/Go plugged in,\n put it on and authorize this computer when prompted.";
+        private const string STATUS_DEVICE_FOUND_READY = "Device found. Ready to sideload Apps.";
+        private const string STATUS_DEVICE_FOUND_DEVELOPERMODE_OFF = "Device found. Waiting for developer mode to be enabled.";
+        private const string STATUS_DEVICE_FOUND_DEVELOPERMODE_OFF_LONG = "Quest/Go connected - Developer mode is disabled. \n Enable developer mode by clicking the above link.";
+        private const string STATUS_APP_INSTALLATION_SUCCESS = "App installed successfully!";
+        private const string STATUS_APP_INSTALLATION_FAILED = "App NOT installed!\nInfo: ";
         public MainWindow()
         {
             InitializeComponent();
@@ -128,7 +137,8 @@ namespace QuestSideloader
                     }
                     else
                     {
-                        dropLabel.Content = "Getting devices, please plug in your Quest/Go...";
+                        statusLabel.Content = STATUS_SEARCHING;
+                        dropLabel.Content = STATUS_SEARCHING_LONG;
                         getDevices();
                     }
                 }
@@ -137,27 +147,28 @@ namespace QuestSideloader
             }
             else
             {
-                dropLabel.Content = "Getting devices, please plug in your Quest/Go...";
+                statusLabel.Content = STATUS_SEARCHING;
+                dropLabel.Content = STATUS_SEARCHING_LONG;
                 getDevices();
             }
         }
 
         private async void getDevices()
         {
-            statusLabel.Content = "Getting devices, please plug in your Quest/Go...";
             statusBar.Visibility = Visibility.Visible;
 
             //adb devices
             var o = adbCmd("devices");
             if (o.ToLower().Contains("unauthorized"))
             {
-                dropLabel.Content = "Device found. Please leave your Quest/Go plugged in, put it on and authorize this computer when prompted...";
-                statusBar.Visibility = Visibility.Collapsed;
+                dropLabel.Content = STATUS_DEVICE_FOUND_UNAUTHORIZED_LONG;
+                statusLabel.Content = STATUS_DEVICE_FOUND_UNAUTHORIZED;
+                statusBar.Visibility = Visibility.Visible;
                 devicesTimer.IsEnabled = true;
             }
             else if (o.Replace("List of devices", "").Contains("device"))
             {
-                dropLabel.Content = "Device found.";
+                dropLabel.Content = STATUS_DEVICE_FOUND_READY;
                 statusBar.Visibility = Visibility.Collapsed;
                 checkAutoInstall();
             }
@@ -167,9 +178,15 @@ namespace QuestSideloader
                 bool goOrQuestConnected = await IsGoOrQuestConnected(usbDevices);
 
                 if (goOrQuestConnected)
-                    dropLabel.Content = "Oculus HMD connected, please enable developer mode by clicking the above link.";
+                {
+                    dropLabel.Content = STATUS_DEVICE_FOUND_DEVELOPERMODE_OFF_LONG;
+                    statusLabel.Content = STATUS_DEVICE_FOUND_DEVELOPERMODE_OFF;
+                }
                 else
-                    dropLabel.Content = "Getting devices, please plug in your Quest/Go...";
+                {
+                    statusLabel.Content = STATUS_SEARCHING;
+                    dropLabel.Content = STATUS_SEARCHING_LONG;
+                }
 
                 statusBar.Visibility = Visibility.Visible;
                 devicesTimer.IsEnabled = true;
@@ -212,7 +229,7 @@ namespace QuestSideloader
             //check for auto-install package apk
             if (System.IO.File.Exists("./autoinstall.apk"))
             {
-                statusLabel.Content = "Device found.";
+                statusLabel.Content = STATUS_DEVICE_FOUND_READY;
                 dropLabel.Content = "";
                 if (MessageBox.Show("Auto-install APK detected. Do you wish to install this app?\nWarning: You should only install apps from developers you trust!", "Confirm Install", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
                 {
@@ -220,7 +237,7 @@ namespace QuestSideloader
                     var o = adbCmd("install -r ./autoinstall.apk");
                     checkInstallOutput(o);
                     setupDragAndDrop();
-                    statusLabel.Content = "App installed successfully!";
+                    statusLabel.Content = STATUS_APP_INSTALLATION_SUCCESS;
                 }
                 else
                 {
@@ -237,17 +254,17 @@ namespace QuestSideloader
         {
             if (output.Contains("Success"))
             {
-                statusLabel.Content = "App installed successfully!";
+                statusLabel.Content = STATUS_APP_INSTALLATION_SUCCESS;
             }
             else
             {
-                statusLabel.Content = "App NOT installed!\nInfo: " + output;
+                statusLabel.Content = STATUS_APP_INSTALLATION_FAILED + output;
             }
         }
 
         private void setupDragAndDrop()
         {
-            statusLabel.Content = "Device found.";
+            statusLabel.Content = STATUS_DEVICE_FOUND_READY;
             dropLabel.Content = "Drag your app's APK file\nhere to install.";
         }
 
